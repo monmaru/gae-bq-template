@@ -21,8 +21,8 @@ func writeQueryResults(ctx context.Context, s setting, qs string) error {
 	// query settings & run
 	q := client.Query(qs)
 	q.Dst = client.Dataset(s.datasetID).Table(s.tableID)
-	q.CreateDisposition = "CREATE_IF_NEEDED"
-	q.WriteDisposition = "WRITE_TRUNCATE"
+	q.CreateDisposition = bigquery.CreateIfNeeded
+	q.WriteDisposition = bigquery.WriteTruncate
 
 	job, err := q.Run(ctx)
 	if err != nil {
