@@ -12,18 +12,13 @@ type setting struct {
 
 type buildQueryFunc func() (string, error)
 
-func writeQueryResults(ctx context.Context, s setting, build buildQueryFunc) error {
+func writeQueryResults(ctx context.Context, s setting, qs string) error {
 	client, err := bigquery.NewClient(ctx, s.projectID)
 	if err != nil {
 		return err
 	}
 
 	// query settings & run
-	qs, err := build()
-	if err != nil {
-		return err
-	}
-
 	q := client.Query(qs)
 	q.Dst = client.Dataset(s.datasetID).Table(s.tableID)
 	q.CreateDisposition = "CREATE_IF_NEEDED"
