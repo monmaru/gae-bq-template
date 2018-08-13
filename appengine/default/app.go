@@ -1,0 +1,3 @@
+package defaultapp
+
+func init() {}

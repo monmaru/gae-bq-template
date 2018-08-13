@@ -1,0 +1,6 @@
+cron:
+- description: "import data"
+  url: /batch/bq/import
+  target: batch
+  schedule: every day 10:00
+  timezone: Asia/Tokyo
