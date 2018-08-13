@@ -10,8 +10,6 @@ type setting struct {
 	projectID, datasetID, tableID string
 }
 
-type buildQueryFunc func() (string, error)
-
 func writeQueryResults(ctx context.Context, s setting, qs string) error {
 	client, err := bigquery.NewClient(ctx, s.projectID)
 	if err != nil {
