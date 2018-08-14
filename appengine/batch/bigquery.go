@@ -6,28 +6,54 @@ import (
 	"cloud.google.com/go/bigquery"
 )
 
-type setting struct {
-	projectID, datasetID, tableID string
+type client struct {
+	projectID string
 }
 
-func writeQueryResults(ctx context.Context, s setting, qs string) error {
-	client, err := bigquery.NewClient(ctx, s.projectID)
+func newClient(projectID string) *client {
+	return &client{projectID: projectID}
+}
+
+type queryBuilder interface {
+	build(client *bigquery.Client) *bigquery.Query
+}
+
+type importQueryBuilder struct{}
+
+func (b *importQueryBuilder) build(client *bigquery.Client) *bigquery.Query {
+	q := client.Query(`SELECT word, word_count
+FROM ` + "`bigquery-public-data.samples.shakespeare`" + `
+WHERE corpus = @corpus
+AND word_count >= @min_word_count
+ORDER BY word_count DESC;`)
+	q.Parameters = []bigquery.QueryParameter{
+		{
+			Name:  "corpus",
+			Value: "romeoandjuliet",
+		},
+		{
+			Name:  "min_word_count",
+			Value: 250,
+		},
+	}
+	q.Dst = client.Dataset(datasetID).Table(tableID)
+	q.CreateDisposition = bigquery.CreateIfNeeded
+	q.WriteDisposition = bigquery.WriteTruncate
+	return q
+}
+
+func (c *client) writeQueryResults(ctx context.Context, b queryBuilder) error {
+	client, err := bigquery.NewClient(ctx, c.projectID)
 	if err != nil {
 		return err
 	}
 
-	// query settings & run
-	q := client.Query(qs)
-	q.Dst = client.Dataset(s.datasetID).Table(s.tableID)
-	q.CreateDisposition = bigquery.CreateIfNeeded
-	q.WriteDisposition = bigquery.WriteTruncate
-
+	q := b.build(client)
 	job, err := q.Run(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Wait until async querying is done.
 	status, err := job.Wait(ctx)
 	if err != nil {
 		return err
